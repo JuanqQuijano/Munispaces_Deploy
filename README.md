@@ -1,8 +1,14 @@
 # MuniSpaces v2
 
-Plataforma para reservar espacios municipales en Lima, reportar incidencias y operar un panel admin. El diferenciador es un **agente IA con tools atadas al dominio** (horarios reales, navegacion a reserva, alertas a Serenazgo), no un chatbot generico.
+Hice esta plataforma de forma personal pensando en resolver un problema que se me vino a la mente al ver el proceso de reserva de espacios municipales para distintas actividades, así como un proceso de quejas que podría ser algo enogorroso.
 
-Stack: **FastAPI + PostgreSQL + Next.js**. El vanilla original queda como referencia de UX; este repo es el producto desplegable.
+Es basicamente una plataforma digital para la reserva de espacios publicos y reportes ciudadanos. Las funcionalidades fueron definidas luego de un proceso de entrevistas a los trabajadores publicos (a los que les agradezco su cooperación), traté de adaptar lo mejor posible sus necesidades a una aplicación web.
+
+Está principalmente pensada su uso en celular, ya que se pueden adjuntar imagenes, tomar fotos y compartir ubicación. Aunque es funcional en desktop, algunas funciones están algo limitadas ya que una computadora de sobremesa no suele tener gps.
+
+En este caso, ya que trato de trabajar algo de mi diseño de arquitectura de soluciones agenticas, se agregó un **chatbot** hecho con LangGraph y API de open AI. Hice uso de tools, api calls a servicios externos como telegram y google maps y algo de arquitectura propia.
+
+Stack: **FastAPI + PostgreSQL + Next.js**.
 
 ## Arquitectura
 
@@ -27,7 +33,7 @@ API docs: `http://localhost:8000/docs`
 
 ## Arranque local (Git Bash)
 
-Si no tienes Docker/Postgres, usa SQLite (vale para Swagger y demo local). En produccion sigue siendo PostgreSQL.
+Si no tienes a la mano Docker/Postgres, usa SQLite (vale para Swagger y demo local). En produccion sigue siendo PostgreSQL.
 
 ```bash
 # Desde la raiz del repo
@@ -51,14 +57,15 @@ Cuando tengas Docker:
 docker compose up db -d
 ```
 
-Y en `.env` usa `postgresql+psycopg://munispaces:munispaces@localhost:5432/munispaces`.
+Y en `.env` usa `postgresql+psycopg://munispaces:munispaces@localhost:5432/munispaces`. ó como sea que decidas llamar a la bd.
 
 Web: http://localhost:3000  
 API: http://localhost:8000
 
-Tambien puedes levantar API+DB con `docker compose up --build`.
 
 ## Cuentas demo
+
+Solo están para que puedas probar la app.
 
 | Rol | Identificador | Contrasena |
 |-----|---------------|------------|
@@ -81,45 +88,31 @@ Web (`apps/web/.env.local`, copia desde `.env.example`):
 - `NEXT_PUBLIC_API_URL` (local: `http://localhost:8000`; en Vercel: URL publica de la API)
 - `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` (Places + geocoding; no la subas al repo)
 
-## Deploy
 
-### API + Postgres (Railway)
 
-1. Nuevo proyecto Railway → anade PostgreSQL.
-2. Servicio desde `apps/api` (Dockerfile incluido).
-3. Root directory: `apps/api`.
-4. Env:
-   - `DATABASE_URL` (Railway la inyecta; si viene `postgres://`, cambia a `postgresql+psycopg://`)
-   - `JWT_SECRET`, `CORS_ORIGINS=https://tu-front.vercel.app`
-   - `COOKIE_SECURE=true`, `COOKIE_SAMESITE=none`
-   - `OPENAI_API_KEY`, `TELEGRAM_*`
-5. El Dockerfile corre `alembic upgrade head`, seed y `uvicorn`.
-6. Healthcheck: `/health`
+## Funciones principales:
 
-### Web (Vercel)
+### Flujo del ciudadano
 
-1. Importa el repo, root directory `apps/web`.
-2. Env: `NEXT_PUBLIC_API_URL=https://tu-api.up.railway.app`
-3. Node: el `package.json` pide `24.x` (LTS). Vercel lo tomara de `engines.node`.
-4. Deploy.
+- Primero creas tu cuenta indicando, entre otros datos, el distrito en el que vives. Este dato es importante porque la tarifa de una reserva puede cambiar dependiendo de si eres vecino del distrito o no.
+- Una vez dentro, las funciones principales son bastante sencillas: reservar un espacio municipal o reportar una incidencia.
+- En la sección de espacios puedes buscar por nombre y filtrar por tipo. Al seleccionar uno verás su ubicación, tarifas, fechas y horarios disponibles, los cuales se calculan a partir de la fecha actual.
+- El proceso de reserva es parecido a comprar entradas para el cine: eliges uno o más bloques horarios y confirmas la solicitud. Si dos personas intentan reservar el mismo horario, la reserva queda para quien la confirme primero.
+- Luego puedes consultar todo desde **Mis reservas**. Al abrir una reserva se muestran sus detalles, la ubicación en el mapa y un código QR.
+- Cuando llegues al lugar, el administrador podrá escanear ese QR para validar la reserva y marcarla como tramitada.
+- También puedes crear reportes ciudadanos indicando el tipo de incidencia, una descripción, el nivel de urgencia y el punto exacto en el mapa. Desde el celular es posible tomar o adjuntar una fotografía como evidencia.
 
-## Guion de demo (entrevista)
+### Asistente virtual
 
-1. Landing → registro o login ciudadano `87654321`.
-2. Espacios → Parque San Miguel → dos bloques horarios → confirmar.
-3. Intentar la misma hora: la API responde **409**.
-4. Mis reservas → mostrar QR `MUNISPACES:RES:...`.
-5. Asistente: “quiero un parque cerca” (usar ubicacion) → “reserva San Miguel manana 9 a 11” → navega al formulario.
-6. Nuevo reporte con punto en el mapa.
-7. Login admin `Admin01` → inbox de reportes → Serenazgo (Telegram anonimo).
-8. Tramitar: pegar el payload del QR → estado `tramitada`.
-9. Mostrar `/docs` y el grafico LangGraph (tools sobre services, no JSON suelto).
+El asistente permite realizar varias de estas acciones mediante una conversación. Puede ayudarte a encontrar espacios, consultar horarios disponibles, preparar una reserva o crear el borrador de un reporte. Antes de registrar una operación importante, la aplicación muestra un formulario de confirmación para que puedas revisar y corregir los datos.
 
-## Tests
+El chatbot no trabaja de forma aislada: utiliza herramientas conectadas con los servicios de la aplicación. De esta manera consulta información real de espacios y horarios, puede abrir los flujos correspondientes y, en situaciones de emergencia, enviar una alerta anónima a Serenazgo mediante Telegram.
 
-```bash
-cd apps/api
-pytest
-```
+### Flujo del administrador
 
-Cubre login/registro, permiso admin en tramitar, y conflicto de reservas.
+- Consultar los reportes enviados por los ciudadanos y revisar su ubicación en el mapa.
+- Ver el detalle y la evidencia adjunta de cada incidencia.
+- Escanear o ingresar el código de una reserva para comprobar que sea válida y tramitarla.
+- Consultar información general desde su panel y utilizar una versión del asistente adaptada a sus tareas.
+
+En conjunto, la idea es concentrar en una sola aplicación procesos que normalmente se realizan por canales separados, manteniendo una experiencia sencilla tanto para el ciudadano como para el personal municipal.
