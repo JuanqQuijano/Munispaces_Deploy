@@ -1,0 +1,42 @@
+# Secrets / local env (nunca subir .env reales)
+.env
+.env.local
+.env.*.local
+apps/api/.env
+apps/web/.env.local
+
+# Notas personales locales
+paralocal.txt
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+coverage/
+
+# Bases de datos locales
+*.db
+*.sqlite
+*.sqlite3
+apps/api/*.db
+
+# Node / Next
+node_modules/
+.next/
+out/
+dist/
+*.tsbuildinfo
+
+# Uploads / artefactos locales
+*.log
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
