@@ -16,11 +16,15 @@ export function SiteHeader() {
   const admin = user?.role === "admin";
   const showGuest = !loading && !user;
   const showUser = !loading && !!user;
+  // Landing always keeps the 3 marketing links, even with an active session.
+  // Auth hydration used to swap guest → user and unmount the bar.
+  const isLanding = pathname === "/";
+  const showGuestBar = isLanding || showGuest;
 
   const home = user ? (admin ? "/administrador" : "/ciudadano") : "/";
 
   return (
-    <header className={showGuest ? "site-header site-header-guest" : "site-header"}>
+    <header className={showGuestBar ? "site-header site-header-guest" : "site-header"}>
       <nav className="navbar">
         <Link className="brand" href={home} aria-label="Ir al inicio">
           <img className="brand-icon" src="/logoVertical_sinletras.png" alt="" />
@@ -38,7 +42,7 @@ export function SiteHeader() {
                 </Link>
               ))
             : null}
-          {showUser ? (
+          {showUser && !isLanding ? (
             <Link
               href="/ciudadano/espacios"
               className={`nav-text-link${pathname === "/ciudadano/espacios" ? " active" : ""}`}
@@ -61,7 +65,7 @@ export function SiteHeader() {
           ) : null}
         </div>
       </nav>
-      {showGuest ? (
+      {showGuestBar ? (
         <div className="guest-nav-bar" aria-label="Navegacion principal">
           {GUEST_LINKS.map(([href, label]) => (
             <Link
