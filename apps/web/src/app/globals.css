@@ -1644,6 +1644,27 @@ p {
   margin-top: 12px;
 }
 
+.report-card-detail {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f0d4d4;
+}
+
+.report-card-detail .admin-reporte-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.report-card-detail .reporte-detalle-foto {
+  width: 100%;
+  max-height: 180px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
 .reports-empty {
   padding: 18px 16px;
 }

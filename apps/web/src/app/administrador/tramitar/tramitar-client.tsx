@@ -39,7 +39,7 @@ export default function TramitarClient() {
         );
         setStatus("Apunta la camara al QR del ciudadano.");
       } catch {
-        setStatus("Camara no disponible. Pega el payload manualmente.");
+        setStatus("Camara no disponible. Pega el codigo del QR manualmente.");
       }
     }
     start();
@@ -85,14 +85,19 @@ export default function TramitarClient() {
             <>
               <div className="tramitar-resumen">
                 <strong>Escaneo QR</strong>
-                Pega o escanea el payload MUNISPACES:RES:... del ciudadano.
+                Apunta la camara al codigo QR del ciudadano, o pegalo abajo si ya lo tienes.
               </div>
               <div id="qr-reader" ref={scanner} className="tramitar-reader" />
               <p className={`tramitar-estado ${error ? "error" : ""}`}>{error || status}</p>
               <form className="form" onSubmit={onSubmit}>
                 <label>
-                  Payload
-                  <input value={payload} onChange={(event) => setPayload(event.target.value)} required />
+                  Codigo del QR
+                  <input
+                    value={payload}
+                    onChange={(event) => setPayload(event.target.value)}
+                    placeholder="MUNISPACES:RES:..."
+                    required
+                  />
                 </label>
                 <div className="tramitar-acciones">
                   <Link className="btn ghost" href="/administrador">

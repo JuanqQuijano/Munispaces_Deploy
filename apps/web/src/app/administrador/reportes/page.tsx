@@ -84,7 +84,7 @@ export default function AdminReportsPage() {
           </div>
 
           <div className="reports-table-wrap">
-            <table className="reports-table">
+            <table className="reports-table reports-table-desktop">
               <thead>
                 <tr>
                   <th>Id-reporte</th>
@@ -97,7 +97,114 @@ export default function AdminReportsPage() {
                 </tr>
               </thead>
               <tbody>
-                {rows.map((row) => {
+                {rows.length === 0 ? (
+                  <tr>
+                    <td colSpan={7}>No hay reportes.</td>
+                  </tr>
+                ) : (
+                  rows.map((row) => {
+                    const parts = formatDateParts(row.created_at);
+                    const rowUrg = urgencyClass(row.urgencia);
+                    const isSelected = selected === row.id;
+                    const isExpanded = expanded === row.id;
+                    const hasPhoto = row.fotos.length > 0;
+
+                    return (
+                      <Fragment key={row.id}>
+                        <tr
+                          className={`report-row urgencia-bg-${rowUrg} ${isSelected ? "selected" : ""} ${
+                            isExpanded ? "expanded" : ""
+                          }`}
+                          onClick={() => selectReport(row.id)}
+                        >
+                          <td>{row.public_id}</td>
+                          <td>{row.tipo}</td>
+                          <td>
+                            <div className="report-fecha-stack">
+                              <span>{parts.day}</span>
+                              <small>{parts.time}</small>
+                            </div>
+                          </td>
+                          <td>{row.urgencia}</td>
+                          <td>
+                            <span
+                              className={`status-badge ${row.estado === "en_proceso" ? "proceso" : row.estado}`}
+                            >
+                              {row.estado.replace("_", " ")}
+                            </span>
+                          </td>
+                          <td>
+                            {hasPhoto ? (
+                              <button
+                                type="button"
+                                className="btn-accion-reporte"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  setFoto(row);
+                                }}
+                              >
+                                Foto
+                              </button>
+                            ) : (
+                              <span className="reporte-sin-foto">—</span>
+                            )}
+                          </td>
+                          <td className="urgencia-franja-cell">
+                            <span className={`urgencia-franja urgencia-${rowUrg}`} />
+                          </td>
+                        </tr>
+                        {isExpanded ? (
+                          <tr className={`report-row-detail urgencia-bg-${rowUrg}`}>
+                            <td colSpan={7}>
+                              <div className="reporte-detalle-expandido">
+                                {hasPhoto ? (
+                                  <button
+                                    type="button"
+                                    className="reporte-detalle-foto-btn"
+                                    onClick={() => setFoto(row)}
+                                  >
+                                    <img
+                                      className="reporte-detalle-foto"
+                                      src={row.fotos[0]}
+                                      alt="Evidencia del reporte"
+                                    />
+                                  </button>
+                                ) : (
+                                  <p className="reporte-detalle-sin-foto">
+                                    Este reporte no incluye fotografia.
+                                  </p>
+                                )}
+                                <div className="reporte-detalle-texto">
+                                  <strong>Descripcion</strong>
+                                  <p>{row.descripcion || "Sin descripcion."}</p>
+                                  {row.direccion ? <small>{row.direccion}</small> : null}
+                                </div>
+                              </div>
+                              {hasPhoto ? (
+                                <button
+                                  type="button"
+                                  className="btn-accion-reporte"
+                                  style={{ marginTop: 10 }}
+                                  onClick={() => setFoto(row)}
+                                >
+                                  Ver foto completa
+                                </button>
+                              ) : null}
+                            </td>
+                          </tr>
+                        ) : null}
+                      </Fragment>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+
+            <div className="reports-cards">
+              {rows.length === 0 ? (
+                <p className="admin-empty">No hay reportes.</p>
+              ) : (
+                rows.map((row) => {
                   const parts = formatDateParts(row.created_at);
                   const rowUrg = urgencyClass(row.urgencia);
                   const isSelected = selected === row.id;
@@ -105,95 +212,93 @@ export default function AdminReportsPage() {
                   const hasPhoto = row.fotos.length > 0;
 
                   return (
-                    <Fragment key={row.id}>
-                      <tr
-                        className={`report-row urgencia-bg-${rowUrg} ${isSelected ? "selected" : ""} ${
-                          isExpanded ? "expanded" : ""
-                        }`}
-                        onClick={() => selectReport(row.id)}
-                      >
-                        <td>{row.public_id}</td>
-                        <td>{row.tipo}</td>
-                        <td>
-                          <div className="report-fecha-stack">
-                            <span>{parts.day}</span>
-                            <small>{parts.time}</small>
-                          </div>
-                        </td>
-                        <td>{row.urgencia}</td>
-                        <td>
-                          <span
-                            className={`status-badge ${row.estado === "en_proceso" ? "proceso" : row.estado}`}
-                          >
-                            {row.estado.replace("_", " ")}
-                          </span>
-                        </td>
-                        <td>
+                    <article
+                      key={row.id}
+                      className={`report-card urgencia-${rowUrg}${isSelected ? " selected" : ""}`}
+                      onClick={() => selectReport(row.id)}
+                    >
+                      <div className="report-card-top">
+                        <strong>{row.public_id}</strong>
+                        <span
+                          className={`status-badge ${row.estado === "en_proceso" ? "proceso" : row.estado}`}
+                        >
+                          {row.estado.replace("_", " ")}
+                        </span>
+                      </div>
+                      <p className="report-card-tipo">{row.tipo}</p>
+                      <p className="report-card-fecha">
+                        {parts.day} · {parts.time} · Urgencia {row.urgencia}
+                      </p>
+                      {isExpanded ? (
+                        <div className="report-card-detail">
                           {hasPhoto ? (
                             <button
                               type="button"
-                              className="btn-accion-reporte"
+                              className="reporte-detalle-foto-btn"
                               onClick={(event) => {
                                 event.stopPropagation();
                                 setFoto(row);
                               }}
                             >
-                              Foto
+                              <img
+                                className="reporte-detalle-foto"
+                                src={row.fotos[0]}
+                                alt="Evidencia del reporte"
+                              />
                             </button>
                           ) : (
-                            <span className="reporte-sin-foto">—</span>
+                            <p className="reporte-detalle-sin-foto">
+                              Este reporte no incluye fotografia.
+                            </p>
                           )}
-                        </td>
-                        <td className="urgencia-franja-cell">
-                          <span className={`urgencia-franja urgencia-${rowUrg}`} />
-                        </td>
-                      </tr>
-                      {isExpanded ? (
-                        <tr className={`report-row-detail urgencia-bg-${rowUrg}`}>
-                          <td colSpan={7}>
-                            <div className="reporte-detalle-expandido">
-                              {hasPhoto ? (
-                                <button
-                                  type="button"
-                                  className="reporte-detalle-foto-btn"
-                                  onClick={() => setFoto(row)}
-                                >
-                                  <img
-                                    className="reporte-detalle-foto"
-                                    src={row.fotos[0]}
-                                    alt="Evidencia del reporte"
-                                  />
-                                </button>
-                              ) : (
-                                <p className="reporte-detalle-sin-foto">
-                                  Este reporte no incluye fotografia.
-                                </p>
-                              )}
-                              <div className="reporte-detalle-texto">
-                                <strong>Descripcion</strong>
-                                <p>{row.descripcion || "Sin descripcion."}</p>
-                                {row.direccion ? <small>{row.direccion}</small> : null}
-                              </div>
-                            </div>
+                          <div className="reporte-detalle-texto">
+                            <strong>Descripcion</strong>
+                            <p>{row.descripcion || "Sin descripcion."}</p>
+                            {row.direccion ? <small>{row.direccion}</small> : null}
+                          </div>
+                          <div className="admin-reporte-actions">
+                            <button
+                              type="button"
+                              className={`btn-accion-reporte urgencia-${rowUrg}`}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                alertar(row.id);
+                              }}
+                            >
+                              Serenazgo
+                            </button>
+                            {row.estado !== "resuelto" ? (
+                              <button
+                                type="button"
+                                className={`btn-accion-reporte urgencia-${rowUrg}`}
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  resolve(row.id);
+                                }}
+                              >
+                                Resolver
+                              </button>
+                            ) : null}
                             {hasPhoto ? (
                               <button
                                 type="button"
                                 className="btn-accion-reporte"
-                                style={{ marginTop: 10 }}
-                                onClick={() => setFoto(row)}
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  setFoto(row);
+                                }}
                               >
-                                Ver foto completa
+                                Ver foto
                               </button>
                             ) : null}
-                          </td>
-                        </tr>
+                          </div>
+                        </div>
                       ) : null}
-                    </Fragment>
+                    </article>
                   );
-                })}
-              </tbody>
-            </table>
-            {rows.length === 0 ? <p className="admin-empty">No hay reportes.</p> : null}
+                })
+              )}
+            </div>
           </div>
         </div>
 
