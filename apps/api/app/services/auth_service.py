@@ -106,8 +106,15 @@ class AuthService:
         if refresh_token:
             self.refresh_tokens.revoke(refresh_token)
             self.db.commit()
-        response.delete_cookie(ACCESS_COOKIE, path="/")
-        response.delete_cookie(REFRESH_COOKIE, path="/")
+        # Must match set_cookie flags or browsers keep SameSite=None cookies.
+        for name in (ACCESS_COOKIE, REFRESH_COOKIE):
+            response.delete_cookie(
+                name,
+                path="/",
+                secure=settings.cookie_secure,
+                httponly=True,
+                samesite=settings.cookie_samesite,  # type: ignore[arg-type]
+            )
 
     def _set_cookie(self, response: Response, name: str, value: str, max_age: int) -> None:
         response.set_cookie(

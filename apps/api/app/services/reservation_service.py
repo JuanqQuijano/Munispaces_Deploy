@@ -40,6 +40,10 @@ class ReservationService:
             ],
         )
 
+    def has_free_slot(self, space_id: UUID, fecha: date) -> bool:
+        occupied = self._occupied_slots(space_id, fecha)
+        return any(slot not in occupied for slot in DAY_SLOTS)
+
     def create(self, user: User, payload: ReservationCreate) -> Reservation:
         if not is_valid_day_slots(payload.slots):
             raise DomainError("Selecciona bloques consecutivos de 1 hora (9:00 am a 5:00 pm).")

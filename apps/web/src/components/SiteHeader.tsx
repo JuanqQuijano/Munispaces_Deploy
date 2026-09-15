@@ -16,12 +16,17 @@ export function SiteHeader() {
   const admin = user?.role === "admin";
   const showGuest = !loading && !user;
   const showUser = !loading && !!user;
-  // Landing always keeps the 3 marketing links, even with an active session.
-  // Auth hydration used to swap guest → user and unmount the bar.
   const isLanding = pathname === "/";
-  const showGuestBar = isLanding || showGuest;
+  // Landing always shows marketing links (desktop + mobile bar).
+  const showMarketingLinks = isLanding || showGuest;
+  const showGuestBar = showMarketingLinks;
 
   const home = user ? (admin ? "/administrador" : "/ciudadano") : "/";
+
+  async function onLogout() {
+    await logout();
+    window.location.assign("/");
+  }
 
   return (
     <header className={showGuestBar ? "site-header site-header-guest" : "site-header"}>
@@ -31,7 +36,7 @@ export function SiteHeader() {
           <span>MuniSpaces</span>
         </Link>
         <div className="nav-links">
-          {showGuest
+          {showMarketingLinks
             ? GUEST_LINKS.map(([href, label]) => (
                 <Link
                   key={`desk-${href}-${label}`}
@@ -51,10 +56,7 @@ export function SiteHeader() {
             </Link>
           ) : null}
           {showUser ? (
-            <button
-              className="register-link nav-button"
-              onClick={() => logout().then(() => (window.location.href = "/"))}
-            >
+            <button className="register-link nav-button" type="button" onClick={() => void onLogout()}>
               Salir
             </button>
           ) : null}

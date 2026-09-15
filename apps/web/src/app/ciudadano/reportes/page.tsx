@@ -23,17 +23,23 @@ export default function MyReportsPage() {
   const [selected, setSelected] = useState<Report | null>(null);
   const [foto, setFoto] = useState<string | null>(null);
 
+  async function load() {
+    try {
+      const data = await api<Report[]>("/api/v1/reports");
+      setRows(data);
+    } catch {
+      setRows([]);
+      setSelected(null);
+    }
+  }
+
   useEffect(() => {
-    api<Report[]>("/api/v1/reports")
-      .then((data) => {
-        setRows(data);
-        setSelected(data[0] || null);
-      })
-      .catch(() => {
-        setRows([]);
-        setSelected(null);
-      });
+    load();
   }, []);
+
+  function toggleReport(row: Report) {
+    setSelected((prev) => (prev?.id === row.id ? null : row));
+  }
 
   const activos = useMemo(() => rows.filter((row) => row.estado === "en_proceso").length, [rows]);
   const historial = useMemo(() => rows.filter((row) => row.estado === "resuelto").length, [rows]);
@@ -66,7 +72,7 @@ export default function MyReportsPage() {
                     <Fragment key={row.id}>
                       <tr
                         className={selected?.id === row.id ? "report-row selected" : "report-row"}
-                        onClick={() => setSelected(row)}
+                        onClick={() => toggleReport(row)}
                       >
                         <td>{row.public_id}</td>
                         <td>{row.tipo}</td>
@@ -119,7 +125,7 @@ export default function MyReportsPage() {
                   <article
                     key={row.id}
                     className={selected?.id === row.id ? `report-card selected ${urgenciaClass(row.urgencia)}` : `report-card ${urgenciaClass(row.urgencia)}`}
-                    onClick={() => setSelected(row)}
+                    onClick={() => toggleReport(row)}
                   >
                     <div className="report-card-top">
                       <strong>{row.public_id}</strong>

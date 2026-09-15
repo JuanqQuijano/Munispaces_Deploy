@@ -638,13 +638,38 @@ p {
   accent-color: var(--blue);
 }
 
-.filter-group select {
+.filter-group select,
+.filter-group input[type="date"] {
   width: 100%;
   padding: 12px 14px;
   border: 0;
   border-radius: 8px;
   background: #fff;
   font-size: 13px;
+  color: var(--blue);
+}
+
+.filter-hint {
+  margin: 8px 0 0;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.filter-clear {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.filter-clear:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .espacios-content {

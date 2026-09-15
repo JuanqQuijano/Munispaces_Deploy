@@ -21,9 +21,17 @@ def list_spaces(
     distrito: str | None = None,
     lat: float | None = Query(default=None),
     lng: float | None = Query(default=None),
+    fecha: date | None = Query(default=None, description="Solo espacios con horario libre ese dia (YYYY-MM-DD)"),
 ) -> list[SpaceOut]:
     service = SpaceService(db)
     spaces = service.list_spaces(distrito=distrito, lat=lat, lng=lng)
+    if fecha is not None:
+        reservations = ReservationService(db)
+        spaces = [
+            space
+            for space in spaces
+            if space.disponible and reservations.has_free_slot(space.id, fecha)
+        ]
     return [service.to_out(space, user) for space in spaces]
 
 

@@ -13,18 +13,54 @@ const TIPOS = [
   "Losas deportivas",
 ] as const;
 
+function todayIso() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function addDaysIso(baseIso: string, days: number) {
+  const [year, month, day] = baseIso.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
+  date.setDate(date.getDate() + days);
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 export default function SpacesPage() {
   const router = useRouter();
+  const minFecha = useMemo(() => todayIso(), []);
+  const maxFecha = useMemo(() => addDaysIso(minFecha, 6), [minFecha]);
   const [spaces, setSpaces] = useState<Space[]>([]);
+  const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [draftQuery, setDraftQuery] = useState("");
   const [distrito, setDistrito] = useState("");
-  const [disponibilidad, setDisponibilidad] = useState("");
+  const [fecha, setFecha] = useState("");
   const [tipos, setTipos] = useState<string[]>([]);
 
   useEffect(() => {
-    api<Space[]>("/api/v1/spaces").then(setSpaces).catch(() => setSpaces([]));
-  }, []);
+    let cancelled = false;
+    setLoading(true);
+    const path = fecha ? `/api/v1/spaces?fecha=${encodeURIComponent(fecha)}` : "/api/v1/spaces";
+    api<Space[]>(path)
+      .then((data) => {
+        if (!cancelled) setSpaces(data);
+      })
+      .catch(() => {
+        if (!cancelled) setSpaces([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [fecha]);
 
   const distritos = useMemo(
     () => [...new Set(spaces.map((space) => space.distrito))].sort((a, b) => a.localeCompare(b)),
@@ -40,11 +76,9 @@ export default function SpacesPage() {
       }
       if (distrito && space.distrito !== distrito) return false;
       if (tipos.length && !tipos.includes(space.tipo)) return false;
-      if (disponibilidad === "disponibles" && !space.disponible) return false;
-      if (disponibilidad === "ocupados" && space.disponible) return false;
       return true;
     });
-  }, [spaces, query, distrito, tipos, disponibilidad]);
+  }, [spaces, query, distrito, tipos]);
 
   function toggleTipo(tipo: string) {
     setTipos((current) => (current.includes(tipo) ? current.filter((item) => item !== tipo) : [...current, tipo]));
@@ -55,7 +89,8 @@ export default function SpacesPage() {
       window.alert("Este espacio no tiene disponibilidad en este momento.");
       return;
     }
-    router.push(`/ciudadano/espacios/${space.id}/reservar`);
+    const queryFecha = fecha ? `?fecha=${encodeURIComponent(fecha)}` : "";
+    router.push(`/ciudadano/espacios/${space.id}/reservar${queryFecha}`);
   }
 
   return (
@@ -93,12 +128,21 @@ export default function SpacesPage() {
             </div>
 
             <div className="filter-group">
-              <h3>Fecha Disponible</h3>
-              <select value={disponibilidad} onChange={(event) => setDisponibilidad(event.target.value)}>
-                <option value="">Selecciona fecha</option>
-                <option value="disponibles">Solo disponibles</option>
-                <option value="ocupados">Solo ocupados</option>
-              </select>
+              <h3>Fecha disponible</h3>
+              <input
+                type="date"
+                value={fecha}
+                min={minFecha}
+                max={maxFecha}
+                onChange={(event) => setFecha(event.target.value)}
+              />
+              {fecha ? (
+                <button type="button" className="filter-clear" onClick={() => setFecha("")}>
+                  Quitar fecha
+                </button>
+              ) : (
+                <p className="filter-hint">Elige un dia (proximos 7) para ver espacios con horario libre.</p>
+              )}
             </div>
           </aside>
 
@@ -120,13 +164,20 @@ export default function SpacesPage() {
             <div className="espacios-header">
               <h1>EXPLORA ESPACIOS</h1>
               <p>
-                Mostrando {filtered.length} resultado{filtered.length === 1 ? "" : "s"}
+                {loading
+                  ? "Buscando espacios..."
+                  : `Mostrando ${filtered.length} resultado${filtered.length === 1 ? "" : "s"}`}
+                {fecha && !loading ? ` · ${fecha}` : ""}
               </p>
             </div>
 
             <div className="espacios-grid">
-              {filtered.length === 0 ? (
-                <p className="espacios-empty">No hay espacios con esos filtros.</p>
+              {!loading && filtered.length === 0 ? (
+                <p className="espacios-empty">
+                  {fecha
+                    ? "No hay espacios con horario libre en esa fecha."
+                    : "No hay espacios con esos filtros."}
+                </p>
               ) : (
                 filtered.map((space) => (
                   <article

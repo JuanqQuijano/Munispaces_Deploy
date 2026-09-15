@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { AdminShell } from "@/components/AdminShell";
@@ -13,20 +13,45 @@ export default function TramitarClient() {
   const [result, setResult] = useState<Reservation | null>(null);
   const [error, setError] = useState("");
   const [status, setStatus] = useState("Preparando camara...");
+  const [submitting, setSubmitting] = useState(false);
   const scanner = useRef<HTMLDivElement>(null);
+  const cameraRef = useRef<{ stop: () => Promise<void> } | null>(null);
+
+  async function tramitar(code: string) {
+    if (!code.trim() || submitting) return;
+    setSubmitting(true);
+    setError("");
+    try {
+      const data = await api<Reservation>("/api/v1/reservations/tramitar", {
+        method: "POST",
+        body: JSON.stringify({ payload: code }),
+      });
+      await cameraRef.current?.stop().catch(() => undefined);
+      cameraRef.current = null;
+      setResult(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo tramitar.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   useEffect(() => {
     const initial = search.get("payload");
-    if (initial) setPayload(initial);
+    if (initial) {
+      setPayload(initial);
+      setStatus("Codigo listo. Confirma para tramitar.");
+    }
   }, [search]);
 
   useEffect(() => {
-    let control: { stop: () => Promise<void> } | null = null;
+    let cancelled = false;
     async function start() {
       if (!scanner.current) return;
       const { Html5Qrcode } = await import("html5-qrcode");
+      if (cancelled || !scanner.current) return;
       const camera = new Html5Qrcode(scanner.current.id);
-      control = camera;
+      cameraRef.current = camera;
       try {
         await camera.start(
           { facingMode: "environment" },
@@ -34,33 +59,25 @@ export default function TramitarClient() {
           (decoded) => {
             setPayload(decoded);
             setStatus("QR leido. Confirma para tramitar.");
+            camera.stop().catch(() => undefined);
+            cameraRef.current = null;
           },
           () => undefined,
         );
-        setStatus("Apunta la camara al QR del ciudadano.");
+        if (!cancelled) setStatus("Apunta la camara al QR del ciudadano.");
       } catch {
-        setStatus("Camara no disponible. Pega el codigo del QR manualmente.");
+        if (!cancelled) {
+          setStatus("No se pudo abrir la camara. Usa un dispositivo con camara para escanear el QR.");
+        }
       }
     }
     start();
     return () => {
-      control?.stop().catch(() => undefined);
+      cancelled = true;
+      cameraRef.current?.stop().catch(() => undefined);
+      cameraRef.current = null;
     };
   }, []);
-
-  async function onSubmit(event: FormEvent) {
-    event.preventDefault();
-    setError("");
-    try {
-      const data = await api<Reservation>("/api/v1/reservations/tramitar", {
-        method: "POST",
-        body: JSON.stringify({ payload }),
-      });
-      setResult(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo tramitar.");
-    }
-  }
 
   return (
     <AdminShell>
@@ -85,29 +102,23 @@ export default function TramitarClient() {
             <>
               <div className="tramitar-resumen">
                 <strong>Escaneo QR</strong>
-                Apunta la camara al codigo QR del ciudadano, o pegalo abajo si ya lo tienes.
+                Apunta la camara al codigo QR que muestra el ciudadano.
               </div>
               <div id="qr-reader" ref={scanner} className="tramitar-reader" />
               <p className={`tramitar-estado ${error ? "error" : ""}`}>{error || status}</p>
-              <form className="form" onSubmit={onSubmit}>
-                <label>
-                  Codigo del QR
-                  <input
-                    value={payload}
-                    onChange={(event) => setPayload(event.target.value)}
-                    placeholder="MUNISPACES:RES:..."
-                    required
-                  />
-                </label>
-                <div className="tramitar-acciones">
-                  <Link className="btn ghost" href="/administrador">
-                    Cancelar
-                  </Link>
-                  <button className="btn" type="submit">
-                    Marcar tramitada
-                  </button>
-                </div>
-              </form>
+              <div className="tramitar-acciones">
+                <Link className="btn ghost" href="/administrador">
+                  Cancelar
+                </Link>
+                <button
+                  className="btn"
+                  type="button"
+                  disabled={!payload || submitting}
+                  onClick={() => tramitar(payload)}
+                >
+                  {submitting ? "Tramitando..." : "Marcar tramitada"}
+                </button>
+              </div>
             </>
           )}
         </section>
