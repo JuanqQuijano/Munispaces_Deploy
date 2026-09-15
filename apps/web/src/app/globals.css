@@ -2296,7 +2296,9 @@ p {
 }
 
 .dash-sidebar a {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 38px 18px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.35);
   color: #fff;
@@ -3459,20 +3461,31 @@ p {
 @media (max-width: 1100px) {
   .dash-body {
     grid-template-columns: 1fr;
+    align-content: start;
   }
 
   .dash-sidebar {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
+    align-self: start;
     gap: 0;
+    width: 100%;
+    min-height: 0;
+    height: auto;
   }
 
   .dash-sidebar a {
-    flex: 1 1 auto;
-    padding: 16px 14px;
+    flex: 1 1 0;
+    align-self: center;
+    min-height: 40px;
+    max-height: 44px;
+    height: 44px;
+    padding: 8px 10px;
     border-bottom: 0;
     border-right: 1px solid rgba(255, 255, 255, 0.35);
     text-align: center;
+    box-sizing: border-box;
   }
 
   .dash-sidebar a.active {
@@ -3641,9 +3654,14 @@ p {
     gap: 10px;
   }
 
+  .site-header-guest {
+    background: #ffffff;
+  }
+
   .site-header-guest .navbar {
     width: 100%;
     padding: 8px 12px;
+    background: var(--blue);
   }
 
   .site-header-guest .nav-links .nav-text-link {
@@ -3659,6 +3677,7 @@ p {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
     width: 100%;
+    margin-top: 8px;
     background: var(--sidebar-blue);
   }
 
@@ -3666,8 +3685,8 @@ p {
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 44px;
-    padding: 12px 8px;
+    min-height: 40px;
+    padding: 10px 8px;
     border: 0;
     border-left: 1px solid rgba(255, 255, 255, 0.35);
     background: transparent;
@@ -3744,6 +3763,7 @@ p {
 
   .dash-body {
     min-height: 0;
+    align-content: start;
   }
 
   .dash-sidebar {
@@ -3751,15 +3771,23 @@ p {
     top: 64px;
     z-index: 15;
     flex-wrap: nowrap;
+    align-items: center;
+    align-self: start;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    min-height: 0;
+    height: auto;
   }
 
   .dash-sidebar a {
-    flex: 1 0 auto;
-    min-height: 44px;
-    padding: 12px 10px;
-    font-size: 11px;
+    flex: 1 1 0;
+    align-self: center;
+    min-height: 38px;
+    max-height: 42px;
+    height: 42px;
+    padding: 8px 6px;
+    font-size: 10px;
+    line-height: 1.1;
     white-space: nowrap;
   }
 
@@ -4082,7 +4110,9 @@ p {
   }
 
   .dash-sidebar a {
-    padding: 12px 8px;
+    min-height: 38px;
+    max-height: 42px;
+    padding: 8px 6px;
     font-size: 10px;
   }
 
