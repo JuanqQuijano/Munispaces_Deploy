@@ -3,12 +3,14 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { AdminShell } from "@/components/AdminShell";
 import { api } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 import { MONTHS } from "@/lib/format";
 import type { Observation, Report, Reservation, Space } from "@/lib/types";
 
 const WEEKDAYS = ["L", "M", "M", "J", "V", "S", "D"];
 
 export default function ManageSpacePage() {
+  const { user } = useAuth();
   const [spaces, setSpaces] = useState<Space[]>([]);
   const [spaceId, setSpaceId] = useState("");
   const [cursor, setCursor] = useState(() => new Date());
@@ -22,13 +24,13 @@ export default function ManageSpacePage() {
     api<Space[]>("/api/v1/spaces")
       .then((rows) => {
         setSpaces(rows);
-        const sanMiguel = rows.find((row) => row.distrito === "San Miguel") || rows[0];
-        if (sanMiguel) setSpaceId(sanMiguel.id);
+        const assigned = rows.find((row) => row.id === user?.espacio_id) || rows[0];
+        if (assigned) setSpaceId(assigned.id);
       })
       .catch(() => setSpaces([]));
     api<Reservation[]>("/api/v1/reservations").then(setReservas).catch(() => setReservas([]));
     api<Report[]>("/api/v1/reports").then(setReportes).catch(() => setReportes([]));
-  }, []);
+  }, [user?.espacio_id]);
 
   useEffect(() => {
     if (!spaceId) return;
@@ -96,18 +98,10 @@ export default function ManageSpacePage() {
   return (
     <AdminShell>
       <h1 className="page-title">Gestionar espacio</h1>
-      <p className="page-subtitle">Consulta reservas y reportes registrados por dia en el calendario</p>
-
-      <label className="admin-space-select">
-        Espacio
-        <select value={spaceId} onChange={(event) => setSpaceId(event.target.value)}>
-          {spaces.map((space) => (
-            <option key={space.id} value={space.id}>
-              {space.nombre}
-            </option>
-          ))}
-        </select>
-      </label>
+      <p className="page-subtitle">
+        {spaces.find((row) => row.id === spaceId)?.nombre || user?.espacio_nombre || "Tu espacio"} — reservas y
+        reportes por dia
+      </p>
 
       <div className="admin-calendario-wrap">
         <div className="admin-calendario-header">

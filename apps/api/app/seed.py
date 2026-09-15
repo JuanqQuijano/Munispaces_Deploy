@@ -380,6 +380,12 @@ def run() -> None:
             else:
                 spaces.add(Space(**item))
 
+        san_miguel = spaces.get_by_code("esp-001")
+        admin = users.get_by_username(settings.admin_username)
+        if admin and san_miguel:
+            admin.espacio_id = san_miguel.id
+            admin.distrito = san_miguel.distrito
+
         db.commit()
         extras = len(SPACES) - len(BASE_SPACES)
         print(

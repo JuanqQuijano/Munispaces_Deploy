@@ -1,22 +1,14 @@
-from math import atan2, cos, radians, sin, sqrt
 from uuid import UUID
 
 from sqlalchemy.orm import Session
 
 from app.domain.exceptions import NotFoundError
+from app.domain.geo import sort_spaces_by_distance
 from app.domain.lima import RESIDENT_DISCOUNT_SOLES, es_residente_del_espacio, precio_hora_para, precio_hora_residente
 from app.models.space import Space
 from app.models.user import User
 from app.repositories.space_repository import SpaceRepository
 from app.schemas.space import SpaceOut, SpaceUpdate
-
-
-def haversine_km(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
-    radius = 6371
-    d_lat = radians(lat2 - lat1)
-    d_lng = radians(lng2 - lng1)
-    a = sin(d_lat / 2) ** 2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(d_lng / 2) ** 2
-    return radius * 2 * atan2(sqrt(a), sqrt(1 - a))
 
 
 class SpaceService:
@@ -33,12 +25,7 @@ class SpaceService:
         spaces = self.repo.list_all(distrito)
         if lat is None or lng is None:
             return spaces
-        decorated = []
-        for space in spaces:
-            space.distancia_km = round(haversine_km(lat, lng, space.lat, space.lng), 2)  # type: ignore[attr-defined]
-            decorated.append(space)
-        decorated.sort(key=lambda item: getattr(item, "distancia_km") or 0)
-        return decorated
+        return sort_spaces_by_distance(spaces, lat, lng)
 
     def get(self, space_id: UUID) -> Space:
         space = self.repo.get_by_id(space_id)

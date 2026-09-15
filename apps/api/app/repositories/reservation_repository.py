@@ -36,17 +36,14 @@ class ReservationRepository:
             )
         )
 
-    def list_for_admin(self, distrito: str | None = None) -> list[Reservation]:
+    def list_for_space(self, space_id: UUID) -> list[Reservation]:
         stmt = (
             select(Reservation)
             .options(joinedload(Reservation.space), joinedload(Reservation.user))
+            .where(Reservation.space_id == space_id)
             .order_by(Reservation.created_at.desc())
         )
-        rows = list(self.db.scalars(stmt).unique())
-        if not distrito:
-            return rows
-        needle = distrito.lower()
-        return [row for row in rows if row.space and needle in row.space.distrito.lower()]
+        return list(self.db.scalars(stmt).unique())
 
     def list_active_for_space_date(self, space_id: UUID, fecha: date) -> list[Reservation]:
         stmt = select(Reservation).where(

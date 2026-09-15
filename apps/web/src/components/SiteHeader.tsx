@@ -10,19 +10,17 @@ export function SiteHeader() {
   const admin = user?.role === "admin";
 
   const links = user
-    ? [
-        ["/ciudadano/espacios", "Espacios"],
-      ]
+    ? [["/ciudadano/espacios", "Espacios"] as const]
     : [
-        ["/login", "Administrador"],
-        ["/ciudadano/espacios", "Espacios"],
-        ["/login", "Ingresar"],
+        ["/login", "Administrador"] as const,
+        ["/ciudadano/espacios", "Espacios"] as const,
+        ["/login", "Ingresar"] as const,
       ];
 
   const home = user ? (admin ? "/administrador" : "/ciudadano") : "/";
 
   return (
-    <header className="site-header">
+    <header className={user ? "site-header" : "site-header site-header-guest"}>
       <nav className="navbar">
         <Link className="brand" href={home} aria-label="Ir al inicio">
           <img className="brand-icon" src="/logoVertical_sinletras.png" alt="" />

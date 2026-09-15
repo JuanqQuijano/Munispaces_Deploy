@@ -70,7 +70,7 @@ export default function AdminReportsPage() {
       <div className="dashboard-grid">
         <div>
           <h1 className="page-title">Reportes de la zona</h1>
-          <p className="page-subtitle">Incidencias reportadas por ciudadanos en tiempo real</p>
+          <p className="page-subtitle">Incidencias reportadas en tu espacio</p>
 
           <div className="summary-panel pink" style={{ marginBottom: 20 }}>
             <h3>RESUMEN</h3>

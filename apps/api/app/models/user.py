@@ -1,7 +1,7 @@
 from datetime import date, datetime, timezone
 from uuid import UUID, uuid4
 
-from sqlalchemy import Boolean, Date, DateTime, Enum, String, Uuid
+from sqlalchemy import Boolean, Date, DateTime, Enum, ForeignKey, String, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -25,10 +25,12 @@ class User(Base):
     distrito_bloqueado_hasta: Mapped[date | None] = mapped_column(Date, nullable=True)
     password_hash: Mapped[str] = mapped_column(String(255))
     role: Mapped[UserRole] = mapped_column(Enum(UserRole, native_enum=False, length=20))
+    espacio_id: Mapped[UUID | None] = mapped_column(Uuid, ForeignKey("spaces.id"), nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
 
+    espacio = relationship("Space", back_populates="admins")
     reservations = relationship("Reservation", back_populates="user")
     reports = relationship("Report", back_populates="user")
     evidences = relationship("Evidence", back_populates="user")

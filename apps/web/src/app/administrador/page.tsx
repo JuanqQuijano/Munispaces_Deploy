@@ -5,10 +5,12 @@ import Link from "next/link";
 import { AdminShell } from "@/components/AdminShell";
 import { AdminRecentReports } from "@/components/AdminRecentReports";
 import { api } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 import { formatReservationDay } from "@/lib/format";
 import type { Report, Reservation } from "@/lib/types";
 
 export default function AdminHome() {
+  const { user } = useAuth();
   const [reservas, setReservas] = useState<Reservation[]>([]);
   const [reportes, setReportes] = useState<Report[]>([]);
   const [page, setPage] = useState(0);
@@ -29,7 +31,9 @@ export default function AdminHome() {
       <div className="dashboard-grid">
         <div>
           <h1 className="page-title">Panel administrador</h1>
-          <p className="page-subtitle">Losa deportiva San Miguel — reservas y reportes de la zona</p>
+          <p className="page-subtitle">
+            {user?.espacio_nombre || "Tu espacio"} — reservas y reportes de tu jurisdiccion
+          </p>
 
           <div className="admin-stats">
             <div className="admin-stat green">

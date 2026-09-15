@@ -4,6 +4,8 @@ from uuid import UUID
 from fastapi import APIRouter, Query
 
 from app.core.deps import AdminUser, DbSession, OptionalUser
+from app.domain.geo import require_admin_space_id
+from app.domain.exceptions import DomainError
 from app.schemas.reservation import AvailabilityOut
 from app.schemas.space import SpaceOut, SpaceUpdate
 from app.services.reservation_service import ReservationService
@@ -37,6 +39,8 @@ def availability(space_id: UUID, db: DbSession, fecha: date) -> AvailabilityOut:
 
 
 @router.patch("/{space_id}", response_model=SpaceOut, summary="Actualizar espacio")
-def update_space(space_id: UUID, payload: SpaceUpdate, db: DbSession, _admin: AdminUser) -> SpaceOut:
+def update_space(space_id: UUID, payload: SpaceUpdate, db: DbSession, admin: AdminUser) -> SpaceOut:
+    if space_id != require_admin_space_id(admin):
+        raise DomainError("Solo puedes editar el espacio a tu cargo.", 403)
     service = SpaceService(db)
-    return service.to_out(service.update(space_id, payload), _admin)
+    return service.to_out(service.update(space_id, payload), admin)

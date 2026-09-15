@@ -8,6 +8,6 @@ router = APIRouter(prefix="/serenazgo", tags=["serenazgo"])
 
 
 @router.post("/alert", response_model=SerenazgoAlertResponse, summary="Enviar alerta a Serenazgo")
-def alert(payload: SerenazgoAlertRequest, db: DbSession, _admin: AdminUser) -> SerenazgoAlertResponse:
-    enviados, detalle = TelegramService(db).alert(payload.report_id, payload.cantidad)
+def alert(payload: SerenazgoAlertRequest, db: DbSession, admin: AdminUser) -> SerenazgoAlertResponse:
+    enviados, detalle = TelegramService(db).alert(admin, payload.report_id, payload.cantidad)
     return SerenazgoAlertResponse(enviados=enviados, detalle=detalle)

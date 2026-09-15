@@ -23,11 +23,11 @@ def list_reservations(db: DbSession, user: CurrentUser) -> list[ReservationOut]:
 
 
 @router.post("/tramitar", response_model=ReservationOut, summary="Tramitar reserva por QR")
-def tramitar(payload: TramitarRequest, db: DbSession, _admin: AdminUser) -> ReservationOut:
+def tramitar(payload: TramitarRequest, db: DbSession, admin: AdminUser) -> ReservationOut:
     service = ReservationService(db)
     public_id, token = payload.public_id, payload.token
     if payload.payload:
         public_id, token = service.parse_qr_payload(payload.payload)
     if not public_id or not token:
         raise DomainError("Falta el QR o el token de la reserva.", 422)
-    return service.to_out(service.tramitar(public_id, token))
+    return service.to_out(service.tramitar(admin, public_id, token))

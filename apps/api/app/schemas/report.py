@@ -13,6 +13,7 @@ class ReportCreate(BaseModel):
     direccion: str = Field(default="", max_length=240)
     lat: float | None = None
     lng: float | None = None
+    espacio_id: UUID
     fotos: list[str] = Field(default_factory=list, max_length=2)
     evidencia_ids: list[UUID] = Field(default_factory=list, max_length=2)
 
@@ -21,6 +22,8 @@ class ReportOut(BaseModel):
     id: UUID
     public_id: str
     user_id: UUID
+    espacio_id: UUID | None = None
+    espacio_nombre: str = ""
     tipo: str
     urgencia: ReportUrgency
     estado: ReportStatus

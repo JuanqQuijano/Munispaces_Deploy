@@ -7,6 +7,8 @@ export type User = {
   nombre: string;
   distrito: string;
   role: Role;
+  espacio_id?: string | null;
+  espacio_nombre?: string | null;
   tipo_documento?: string;
   tipo_dni?: string;
   ubigeo?: string | null;
@@ -65,6 +67,8 @@ export type Reservation = {
 export type Report = {
   id: string;
   public_id: string;
+  espacio_id?: string | null;
+  espacio_nombre?: string;
   tipo: string;
   urgencia: string;
   estado: string;

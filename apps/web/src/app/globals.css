@@ -1463,6 +1463,9 @@ p {
 }
 
 .btn-ver-qr-reserva {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-height: 36px;
   padding: 8px 14px;
   border: 2px solid var(--blue);
@@ -1596,6 +1599,49 @@ p {
   border: 1px solid var(--pink-border);
   border-radius: 12px;
   overflow: hidden;
+  max-width: 100%;
+}
+
+.reports-cards {
+  display: none;
+}
+
+.report-card {
+  padding: 14px;
+  border-bottom: 1px solid #e8c4c4;
+  cursor: pointer;
+}
+
+.report-card:last-child {
+  border-bottom: 0;
+}
+
+.report-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.report-card-top strong {
+  color: var(--pink-text);
+  font-size: 14px;
+}
+
+.report-card-tipo,
+.report-card-fecha {
+  margin: 0 0 4px;
+  color: var(--pink-text);
+  font-size: 13px;
+}
+
+.report-card .report-detail {
+  margin-top: 12px;
+}
+
+.reports-empty {
+  padding: 18px 16px;
 }
 
 .reports-table {
@@ -3471,11 +3517,6 @@ p {
     grid-template-columns: 1fr;
   }
 
-  .nav-links {
-    flex-wrap: wrap;
-    justify-content: flex-end;
-  }
-
   .hero-image {
     justify-self: start;
   }
@@ -3596,6 +3637,51 @@ p {
     gap: 10px;
   }
 
+  .site-header-guest .navbar {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    align-items: center;
+    gap: 0;
+    padding: 8px 0 0;
+  }
+
+  .site-header-guest .nav-links {
+    display: contents;
+  }
+
+  .site-header-guest .brand {
+    grid-column: 1 / 3;
+    grid-row: 1;
+    margin-left: 12px;
+    justify-self: start;
+  }
+
+  .site-header-guest .register-link {
+    grid-column: 3;
+    grid-row: 1;
+    margin: 0 12px 0 8px;
+    justify-self: end;
+    padding: 10px 14px !important;
+  }
+
+  .site-header-guest .nav-links a:not(.register-link) {
+    grid-row: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 12px 8px;
+    border-left: 1px solid rgba(255, 255, 255, 0.35);
+    background: var(--sidebar-blue);
+    font-size: 11px;
+    line-height: 1.15;
+    text-align: center;
+  }
+
+  .site-header-guest .nav-links a:not(.register-link):first-of-type {
+    border-left: 0;
+  }
+
   .brand {
     padding: 6px 10px;
     font-size: 13px;
@@ -3609,9 +3695,14 @@ p {
 
   .nav-links a,
   .nav-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     padding: 12px 10px;
     min-height: 44px;
     font-size: 11px;
+    text-align: center;
+    line-height: 1.15;
   }
 
   .register-link {
@@ -3666,6 +3757,33 @@ p {
 
   .dash-content {
     padding: 16px 12px calc(28px + env(safe-area-inset-bottom));
+    overflow-x: hidden;
+  }
+
+  .dashboard-grid,
+  .reporte-layout,
+  .reports-table-wrap,
+  .reservation-list {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .reporte-layout {
+    width: 100%;
+    gap: 16px;
+    margin: 12px 0 32px;
+  }
+
+  .reporte-panel,
+  .reporte-map-picker,
+  .map-picker,
+  .upload-area {
+    max-width: 100%;
+  }
+
+  .upload-area {
+    padding: 18px 12px;
+    font-size: 14px;
   }
 
   .page-title {
@@ -3711,23 +3829,113 @@ p {
   }
 
   .reports-table-wrap {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+    overflow: visible;
   }
 
-  .reports-table {
-    min-width: 560px;
+  .reports-table-desktop,
+  .table-pagination {
+    display: none;
+  }
+
+  .reports-cards {
+    display: grid;
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .report-card {
+    padding: 14px;
+    background: #fff;
+    border: 1px solid var(--pink-border);
+    border-radius: 10px;
+    border-bottom: 1px solid var(--pink-border);
+    border-left: 6px solid var(--pink-border);
+  }
+
+  .report-card.urgencia-alto {
+    border-left-color: #8b2e2e;
+  }
+
+  .report-card.urgencia-medio {
+    border-left-color: #f1c40f;
+  }
+
+  .report-card.urgencia-bajo {
+    border-left-color: var(--green);
+  }
+
+  .report-card.selected {
+    outline: 2px solid var(--pink-text);
+  }
+
+  .report-card .report-detail-media img {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    max-height: 180px;
   }
 
   .reservation-card {
-    grid-template-columns: 88px 1fr;
-    gap: 12px;
+    grid-template-columns: 88px minmax(0, 1fr) auto;
+    grid-template-areas:
+      "img info when"
+      "qr badge badge";
+    gap: 10px 12px;
     padding: 12px;
+    align-items: start;
+  }
+
+  .reservation-card-media {
+    display: contents;
   }
 
   .reservation-card img {
+    grid-area: img;
     width: 88px;
     height: 72px;
+  }
+
+  .reservation-card-info {
+    grid-area: info;
+    min-width: 0;
+  }
+
+  .reserva-when {
+    grid-area: when;
+    text-align: right;
+  }
+
+  .reservation-card .btn-ver-qr-reserva {
+    grid-area: qr;
+    width: 100%;
+  }
+
+  .reservation-card > .status-badge {
+    grid-area: badge;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    justify-self: stretch;
+    text-align: center;
+  }
+
+  .top-actions .btn-action {
+    width: 100%;
+  }
+
+  .stat-box small {
+    font-size: 10px;
+    line-height: 1.2;
+  }
+
+  .summary-stats {
+    gap: 8px;
+  }
+
+  .stat-box {
+    min-width: 0;
+    padding: 12px 8px;
   }
 
   .chat-panel {
@@ -3773,24 +3981,31 @@ p {
   }
 
   .modal-overlay {
-    padding: 12px;
-    align-items: flex-end;
-    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    padding: 16px;
+    align-items: center;
+    justify-content: center;
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
   }
 
   .modal-box {
-    width: 100%;
+    width: min(420px, 100%);
     max-width: 100%;
-    max-height: min(92dvh, calc(100dvh - 24px));
+    max-height: min(88dvh, calc(100dvh - 32px));
     overflow: auto;
     padding: 22px 16px;
+    margin: 0 auto;
+  }
+
+  .qr-reserva-modal {
+    width: min(320px, 100%);
+    max-width: 100%;
   }
 
   .reserva-confirm-modal,
   .modal-box.report-confirm-modal,
   .report-confirm-modal {
-    width: 100%;
-    max-height: min(92dvh, calc(100dvh - 24px));
+    width: min(420px, 100%);
+    max-height: min(88dvh, calc(100dvh - 32px));
     padding: 20px 14px;
   }
 

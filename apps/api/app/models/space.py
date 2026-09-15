@@ -28,3 +28,5 @@ class Space(Base):
 
     reservations = relationship("Reservation", back_populates="space")
     observations = relationship("Observation", back_populates="space")
+    reports = relationship("Report", back_populates="espacio")
+    admins = relationship("User", back_populates="espacio")

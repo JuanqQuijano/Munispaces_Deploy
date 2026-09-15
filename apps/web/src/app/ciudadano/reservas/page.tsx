@@ -87,7 +87,7 @@ export default function MyReservationsPage() {
                       </button>
                     ) : null}
                   </div>
-                  <div>
+                  <div className="reservation-card-info">
                     <h3>{row.espacio_nombre}</h3>
                     <p>
                       {row.espacio_nombre}

@@ -31,6 +31,8 @@ class ReportDraftOut(BaseModel):
     lat: float | None = None
     lng: float | None = None
     direccion: str = ""
+    espacio_id: UUID | None = None
+    espacio_nombre: str = ""
 
 
 class AgentAction(BaseModel):

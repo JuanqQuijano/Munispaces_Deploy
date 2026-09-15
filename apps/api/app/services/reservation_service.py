@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.domain.enums import DAY_SLOTS, ReservationStatus
 from app.domain.exceptions import ConflictError, DomainError, NotFoundError
+from app.domain.geo import require_admin_space_id
 from app.domain.lima import precio_hora_para
 from app.domain.time import is_valid_day_slots, minutes_to_label, slot_range_label, slots_overlap
 from app.models.reservation import Reservation
@@ -76,12 +77,14 @@ class ReservationService:
         return self.repo.list_for_user(user.id)
 
     def list_admin(self, user: User) -> list[Reservation]:
-        return self.repo.list_for_admin(user.distrito)
+        return self.repo.list_for_space(require_admin_space_id(user))
 
-    def tramitar(self, public_id: str, token: str) -> Reservation:
+    def tramitar(self, user: User, public_id: str, token: str) -> Reservation:
         reservation = self.repo.get_by_public_id(public_id)
         if not reservation or reservation.token != token:
             raise DomainError("QR o token invalido.", 422)
+        if reservation.space_id != require_admin_space_id(user):
+            raise DomainError("Esta reserva no pertenece a tu espacio.", 403)
         if reservation.estado == ReservationStatus.tramitada:
             raise DomainError("Esta reserva ya fue tramitada.")
         if reservation.estado == ReservationStatus.culminada:

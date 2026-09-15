@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.domain.enums import ReportStatus
 from app.domain.exceptions import DomainError, NotFoundError
+from app.domain.geo import require_admin_space_id
 from app.models.report import Report
 from app.repositories.report_repository import ReportRepository
 
@@ -37,6 +38,8 @@ def build_anonymous_message(report: Report) -> str:
     ]
     if report.direccion:
         lines.append(f"Direccion: {report.direccion}")
+    if getattr(report, "espacio", None):
+        lines.append(f"Espacio: {report.espacio.nombre}")
     if report.lat is not None and report.lng is not None:
         lines.append(f"Ubicacion: https://www.google.com/maps?q={report.lat},{report.lng}")
     return "\n".join(lines)
@@ -129,15 +132,16 @@ class TelegramService:
                 caption = f"Evidencia fotografica del reporte {report.public_id}" if index == 0 else ""
                 self._send_photo(client, used_chat, foto, caption)
 
-    def alert(self, report_id: UUID | None, cantidad: int) -> tuple[int, str]:
+    def alert(self, admin, report_id: UUID | None, cantidad: int) -> tuple[int, str]:
+        space_id = require_admin_space_id(admin)
         if report_id:
             report = self.reports.get_by_id(report_id)
-            if not report:
+            if not report or report.espacio_id != space_id:
                 raise NotFoundError("Reporte no encontrado.")
             self.send_report(report)
             return 1, f"Se envio {report.public_id} a Serenazgo por Telegram."
 
-        pending = self.reports.list_all(ReportStatus.en_proceso)[:cantidad]
+        pending = self.reports.list_for_space(space_id, ReportStatus.en_proceso)[:cantidad]
         if not pending:
             raise DomainError("No hay reportes activos para enviar.")
         sent = 0

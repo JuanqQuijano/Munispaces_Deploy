@@ -7,11 +7,14 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.core.database import Base, get_db
+from app.core.rate_limit import limiter
 from app.core.security import hash_password
 from app.domain.enums import UserRole
 from app.main import app
 from app.models.space import Space
 from app.models.user import User
+
+limiter.enabled = False
 
 engine = create_engine(
     "sqlite://",
@@ -43,21 +46,20 @@ def db_session():
             role=UserRole.ciudadano,
         )
     )
-    session.add(
-        Space(
-            code="esp-001",
-            nombre="PARQUE SAN MIGUEL",
-            distrito="San Miguel",
-            tipo="Losas deportivas",
-            precio_hora=30,
-            rating=4.5,
-            disponible=True,
-            imagen="https://example.com/losa.jpg",
-            direccion="Av. Juan Bertolotto 760, San Miguel",
-            lat=-12.092,
-            lng=-77.0828,
-        )
+    san_miguel = Space(
+        code="esp-001",
+        nombre="PARQUE SAN MIGUEL",
+        distrito="San Miguel",
+        tipo="Losas deportivas",
+        precio_hora=30,
+        rating=4.5,
+        disponible=True,
+        imagen="https://example.com/losa.jpg",
+        direccion="Av. Juan Bertolotto 760, San Miguel",
+        lat=-12.092,
+        lng=-77.0828,
     )
+    session.add(san_miguel)
     session.add(
         Space(
             code="esp-002",
@@ -73,6 +75,8 @@ def db_session():
             lng=-77.0572,
         )
     )
+    session.flush()
+    session.query(User).filter_by(username="Admin01").one().espacio_id = san_miguel.id
     session.commit()
     try:
         yield session

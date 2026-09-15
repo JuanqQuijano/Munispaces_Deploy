@@ -46,7 +46,7 @@ export default function MyReportsPage() {
           <p className="page-subtitle">Gestiona tus reportes y revisa su estado</p>
 
           <div className="reports-table-wrap">
-            <table className="reports-table">
+            <table className="reports-table reports-table-desktop">
               <thead>
                 <tr>
                   <th>Id-reporte</th>
@@ -110,7 +110,53 @@ export default function MyReportsPage() {
                 )}
               </tbody>
             </table>
-            <div className="table-pagination">&lt; 1 / 1 &gt;</div>
+
+            <div className="reports-cards">
+              {rows.length === 0 ? (
+                <p className="empty-hint reports-empty">Aun no tienes reportes.</p>
+              ) : (
+                rows.map((row) => (
+                  <article
+                    key={row.id}
+                    className={selected?.id === row.id ? `report-card selected ${urgenciaClass(row.urgencia)}` : `report-card ${urgenciaClass(row.urgencia)}`}
+                    onClick={() => setSelected(row)}
+                  >
+                    <div className="report-card-top">
+                      <strong>{row.public_id}</strong>
+                      <span className={`status-badge ${row.estado === "en_proceso" ? "proceso" : "resuelto"}`}>
+                        {estadoLabel(row.estado)}
+                      </span>
+                    </div>
+                    <p className="report-card-tipo">{row.tipo}</p>
+                    <p className="report-card-fecha">{formatDate(row.created_at.slice(0, 10))}</p>
+                    {selected?.id === row.id ? (
+                      <div className="report-detail">
+                        <div className="report-detail-media">
+                          {row.fotos?.[0] ? (
+                            <>
+                              <img src={row.fotos[0]} alt="Evidencia" />
+                              <button type="button" className="btn-ver-foto" onClick={(event) => {
+                                event.stopPropagation();
+                                setFoto(row.fotos[0]);
+                              }}>
+                                Ver foto completa
+                              </button>
+                            </>
+                          ) : (
+                            <p className="empty-hint">Sin evidencia fotografica</p>
+                          )}
+                        </div>
+                        <div>
+                          <h4>Descripcion</h4>
+                          <p>{row.descripcion}</p>
+                          <p className="report-detail-address">{row.direccion || "Sin direccion registrada"}</p>
+                        </div>
+                      </div>
+                    ) : null}
+                  </article>
+                ))
+              )}
+            </div>
           </div>
         </section>
 

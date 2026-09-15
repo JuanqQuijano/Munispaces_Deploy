@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { MapPicker } from "@/components/MapPicker";
+import { loadSpaces } from "@/lib/spaces";
 import type { LatLng } from "@/lib/maps";
+import type { Space } from "@/lib/types";
 
 const TIPOS = [
   "Individuo sospechoso",
@@ -21,6 +23,8 @@ export type ReportDraft = {
   lat?: number | null;
   lng?: number | null;
   direccion?: string;
+  espacio_id?: string | null;
+  espacio_nombre?: string;
 };
 
 type EvidenceOut = {
@@ -44,6 +48,9 @@ export function ReportConfirmModal({ draft, onClose, onReported }: Props) {
       ? { lat: draft.lat, lng: draft.lng, direccion: draft.direccion }
       : null,
   );
+  const [spaces, setSpaces] = useState<Space[]>([]);
+  const [espacioId, setEspacioId] = useState(draft.espacio_id || "");
+  const [spaceTouched, setSpaceTouched] = useState(Boolean(draft.espacio_id));
   const [photos, setPhotos] = useState<EvidenceOut[]>([]);
   const [accepted, setAccepted] = useState(false);
   const [error, setError] = useState("");
@@ -57,6 +64,15 @@ export function ReportConfirmModal({ draft, onClose, onReported }: Props) {
       .then(setPhotos)
       .catch(() => setPhotos([]));
   }, [draft.evidencia_ids]);
+
+  useEffect(() => {
+    loadSpaces(coords?.lat, coords?.lng)
+      .then((rows) => {
+        setSpaces(rows);
+        if (!spaceTouched && rows[0]) setEspacioId(rows[0].id);
+      })
+      .catch(() => setSpaces([]));
+  }, [coords?.lat, coords?.lng, spaceTouched]);
 
   function handleMap(next: LatLng) {
     setCoords(next);
@@ -81,6 +97,10 @@ export function ReportConfirmModal({ draft, onClose, onReported }: Props) {
       setError("Marca la ubicacion del reporte en el mapa.");
       return;
     }
+    if (!espacioId) {
+      setError("Elige el espacio al que corresponde el reporte.");
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -93,6 +113,7 @@ export function ReportConfirmModal({ draft, onClose, onReported }: Props) {
           direccion,
           lat: coords.lat,
           lng: coords.lng,
+          espacio_id: espacioId,
           evidencia_ids: draft.evidencia_ids || [],
         }),
       });
@@ -126,7 +147,27 @@ export function ReportConfirmModal({ draft, onClose, onReported }: Props) {
             </button>
             <div className="reserva-confirm-card">
               <h3>Confirma tu reporte</h3>
-              <p className="address">Revisa los datos. Puedes cambiar urgencia y ubicacion antes de enviar.</p>
+              <p className="address">Revisa los datos. Puedes cambiar espacio, urgencia y ubicacion antes de enviar.</p>
+
+              <div className="form-field">
+                <label htmlFor="espacioReporteChat">Espacio</label>
+                <select
+                  id="espacioReporteChat"
+                  value={espacioId}
+                  onChange={(event) => {
+                    setSpaceTouched(true);
+                    setEspacioId(event.target.value);
+                  }}
+                >
+                  <option value="">Elige el espacio</option>
+                  {spaces.map((space) => (
+                    <option key={space.id} value={space.id}>
+                      {space.nombre}
+                      {space.distancia_km != null ? ` · ${space.distancia_km} km` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
               <div className="form-field">
                 <label htmlFor="tipoReporteChat">Tipo de problema</label>

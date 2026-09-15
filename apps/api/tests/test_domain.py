@@ -120,6 +120,7 @@ def test_upload_evidence_and_create_report(client):
     body = uploaded.json()
     assert body["data_url"].startswith("data:image/jpeg;base64,")
     evidence_id = body["id"]
+    space = client.get("/api/v1/spaces").json()[0]
 
     created = client.post(
         "/api/v1/reports",
@@ -130,11 +131,13 @@ def test_upload_evidence_and_create_report(client):
             "direccion": "Av. Ejemplo 123",
             "lat": -12.09,
             "lng": -77.08,
+            "espacio_id": space["id"],
             "evidencia_ids": [evidence_id],
         },
     )
     assert created.status_code == 200, created.text
     assert created.json()["fotos"]
+    assert created.json()["espacio_id"] == space["id"]
 
     reused = client.post(
         "/api/v1/reports",
@@ -144,6 +147,7 @@ def test_upload_evidence_and_create_report(client):
             "descripcion": "Otro intento con la misma foto",
             "lat": -12.09,
             "lng": -77.08,
+            "espacio_id": space["id"],
             "evidencia_ids": [evidence_id],
         },
     )
@@ -156,6 +160,7 @@ def test_cannot_use_other_user_evidence(client):
     evidence_id = uploaded.json()["id"]
 
     client.post("/api/v1/auth/login", json={"identifier": "Admin01", "password": "123654"})
+    space = client.get("/api/v1/spaces").json()[0]
     created = client.post(
         "/api/v1/reports",
         json={
@@ -164,6 +169,7 @@ def test_cannot_use_other_user_evidence(client):
             "descripcion": "Intento con evidencia ajena",
             "lat": -12.09,
             "lng": -77.08,
+            "espacio_id": space["id"],
             "evidencia_ids": [evidence_id],
         },
     )
@@ -182,6 +188,7 @@ def test_expired_evidence_is_rejected(client, db_session):
     db_session.add(evidence)
     db_session.commit()
 
+    space = client.get("/api/v1/spaces").json()[0]
     created = client.post(
         "/api/v1/reports",
         json={
@@ -190,6 +197,7 @@ def test_expired_evidence_is_rejected(client, db_session):
             "descripcion": "Puesto improvisado en la losa",
             "lat": -12.09,
             "lng": -77.08,
+            "espacio_id": space["id"],
             "evidencia_ids": [str(evidence.id)],
         },
     )
@@ -221,3 +229,57 @@ def test_extract_report_draft_action():
     assert action.draft is not None
     assert action.draft.tipo == "Falta de mantenimiento"
     assert action.url is None
+
+
+def test_admin_only_sees_own_space(client):
+    client.post("/api/v1/auth/login", json={"identifier": "87654321", "password": "ciudadano123"})
+    spaces = client.get("/api/v1/spaces").json()
+    local = next(item for item in spaces if item["code"] == "esp-001")
+    other = next(item for item in spaces if item["code"] == "esp-002")
+    fecha = (date.today() + timedelta(days=4)).isoformat()
+    mine = client.post(
+        "/api/v1/reservations",
+        json={"space_id": local["id"], "fecha": fecha, "slots": [540]},
+    )
+    away = client.post(
+        "/api/v1/reservations",
+        json={"space_id": other["id"], "fecha": fecha, "slots": [600]},
+    )
+    assert mine.status_code == 200, mine.text
+    assert away.status_code == 200, away.text
+    client.post(
+        "/api/v1/reports",
+        json={
+            "tipo": "Falta de mantenimiento",
+            "urgencia": "medio",
+            "descripcion": "Banca rota San Miguel",
+            "lat": -12.092,
+            "lng": -77.0828,
+            "espacio_id": local["id"],
+        },
+    )
+    client.post(
+        "/api/v1/reports",
+        json={
+            "tipo": "Falta de mantenimiento",
+            "urgencia": "medio",
+            "descripcion": "Banca rota San Isidro",
+            "lat": -12.1039,
+            "lng": -77.0572,
+            "espacio_id": other["id"],
+        },
+    )
+
+    client.post("/api/v1/auth/login", json={"identifier": "Admin01", "password": "123654"})
+    me = client.get("/api/v1/auth/me")
+    assert me.status_code == 200, me.text
+    assert me.json()["espacio_id"] == local["id"]
+    reservas = client.get("/api/v1/reservations").json()
+    assert {row["space_id"] for row in reservas} == {local["id"]}
+    reportes = client.get("/api/v1/reports").json()
+    assert {row["espacio_id"] for row in reportes} == {local["id"]}
+    blocked = client.post(
+        "/api/v1/reservations/tramitar",
+        json={"payload": away.json()["qr_payload"]},
+    )
+    assert blocked.status_code == 403

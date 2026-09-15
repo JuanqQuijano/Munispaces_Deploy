@@ -1,12 +1,14 @@
 "use client";
 
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CitizenShell } from "@/components/CitizenShell";
 import { MapPicker } from "@/components/MapPicker";
 import { api } from "@/lib/api";
+import { loadSpaces } from "@/lib/spaces";
 import type { LatLng } from "@/lib/maps";
+import type { Space } from "@/lib/types";
 
 const TIPOS = [
   "Individuo sospechoso",
@@ -51,11 +53,23 @@ export default function NewReportPage() {
   const [descripcion, setDescripcion] = useState("");
   const [direccion, setDireccion] = useState("");
   const [coords, setCoords] = useState<LatLng | null>(null);
+  const [spaces, setSpaces] = useState<Space[]>([]);
+  const [espacioId, setEspacioId] = useState("");
+  const [spaceTouched, setSpaceTouched] = useState(false);
   const [fotos, setFotos] = useState<string[]>([]);
   const [accepted, setAccepted] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    loadSpaces(coords?.lat, coords?.lng)
+      .then((rows) => {
+        setSpaces(rows);
+        if (!spaceTouched && rows[0]) setEspacioId(rows[0].id);
+      })
+      .catch(() => setSpaces([]));
+  }, [coords?.lat, coords?.lng, spaceTouched]);
 
   function handleMap(next: LatLng) {
     setCoords(next);
@@ -87,6 +101,10 @@ export default function NewReportPage() {
       setError("Marca la ubicacion del reporte en el mapa.");
       return;
     }
+    if (!espacioId) {
+      setError("Elige el espacio al que corresponde el reporte.");
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -99,6 +117,7 @@ export default function NewReportPage() {
           direccion,
           lat: coords.lat,
           lng: coords.lng,
+          espacio_id: espacioId,
           fotos,
         }),
       });
@@ -124,6 +143,26 @@ export default function NewReportPage() {
           <div className="reporte-panel">
             <h2>Detalles del problema</h2>
             <div className="form-grid">
+              <div className="form-field">
+                <label htmlFor="espacioReporte">Espacio</label>
+                <select
+                  id="espacioReporte"
+                  value={espacioId}
+                  onChange={(event) => {
+                    setSpaceTouched(true);
+                    setEspacioId(event.target.value);
+                  }}
+                  required
+                >
+                  <option value="">Elige el espacio mas cercano</option>
+                  {spaces.map((space) => (
+                    <option key={space.id} value={space.id}>
+                      {space.nombre}
+                      {space.distancia_km != null ? ` · ${space.distancia_km} km` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div className="form-field">
                 <label htmlFor="tipoProblema">Tipo de problema</label>
                 <select id="tipoProblema" value={tipo} onChange={(event) => setTipo(event.target.value)} required>

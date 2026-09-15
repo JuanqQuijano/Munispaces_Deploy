@@ -12,9 +12,9 @@ router = APIRouter(prefix="/observations", tags=["observaciones"])
 
 @router.get("", response_model=list[ObservationOut], summary="Listar observaciones")
 def list_observations(
-    space_id: UUID, db: DbSession, _admin: AdminUser, fecha: date | None = None
+    space_id: UUID, db: DbSession, admin: AdminUser, fecha: date | None = None
 ) -> list[ObservationOut]:
-    rows = ObservationService(db).list_for_space(space_id, fecha)
+    rows = ObservationService(db).list_for_space(admin, space_id, fecha)
     return [ObservationOut.model_validate(row) for row in rows]
 
 

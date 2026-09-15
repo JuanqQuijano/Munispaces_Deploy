@@ -16,6 +16,7 @@ class Report(Base):
     id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
     public_id: Mapped[str] = mapped_column(String(40), unique=True, index=True)
     user_id: Mapped[UUID] = mapped_column(Uuid, ForeignKey("users.id"), index=True)
+    espacio_id: Mapped[UUID | None] = mapped_column(Uuid, ForeignKey("spaces.id"), nullable=True, index=True)
     tipo: Mapped[str] = mapped_column(String(80))
     urgencia: Mapped[ReportUrgency] = mapped_column(Enum(ReportUrgency, native_enum=False, length=20))
     estado: Mapped[ReportStatus] = mapped_column(
@@ -32,3 +33,4 @@ class Report(Base):
     )
 
     user = relationship("User", back_populates="reports")
+    espacio = relationship("Space", back_populates="reports")

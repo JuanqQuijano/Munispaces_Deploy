@@ -38,6 +38,8 @@ class UserOut(BaseModel):
     no_caduca: bool = False
     fecha_nacimiento: date | None = None
     distrito_bloqueado_hasta: date | None = None
+    espacio_id: UUID | None = None
+    espacio_nombre: str | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}

@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.domain.enums import ReportUrgency, UserRole
 from app.domain.exceptions import DomainError
+from app.domain.geo import nearest_space, require_admin_space_id
 from app.domain.reports import REPORT_TYPES, normalize_report_tipo
 from app.models.user import User
 from app.repositories.report_repository import ReportRepository
@@ -88,7 +89,9 @@ def build_system_prompt(user: User, lat: float | None, lng: float | None, catalo
     )
     if user.role == UserRole.admin:
         prompt += (
-            " Eres admin: puedes enviar reportes directos y analizar estadisticas. "
+            " Eres admin del espacio que tienes asignado. "
+            "Solo puedes ver y enviar reportes de ESE espacio. "
+            "puedes enviar reportes directos y analizar estadisticas de tu espacio. "
             "No envies reportes a Telegram salvo que el administrador lo pida con claridad."
         )
     if user.role == UserRole.ciudadano:
@@ -98,6 +101,12 @@ def build_system_prompt(user: User, lat: float | None, lng: float | None, catalo
             f"{tipos}. "
             "NO hagas una entrevista. No pidas tipo, urgencia ni una descripcion mas larga "
             "si ya se entiende el problema. Tu infieres esos campos. "
+            "Siempre asigna el reporte a un espacio (parque). "
+            "Si el ciudadano nombra un parque, usa ese code. "
+            "Si hay GPS y no nombra parque, usa el mas cercano con obtener_parques_cercanos "
+            "(el primero de la lista; si hay empate, el de menor distancia y luego el code). "
+            "Pasa espacio_id (code como esp-001) a abrir_borrador_reporte. "
+            "El ciudadano puede cambiar el espacio en el resumen. "
             "Ejemplos: 'quiero reportar una banca rota' -> tipo Falta de mantenimiento, "
             "descripcion 'Banca rota', urgencia medio. "
             "'hay alguien sospechoso' -> Individuo sospechoso, urgencia alto. "
@@ -305,8 +314,9 @@ class AgentService:
             urgencia: str = "medio",
             evidencia_ids: str = "",
             direccion: str = "",
+            espacio_id: str = "",
         ) -> str:
-            """Abre YA el resumen del reporte. Infiere tipo, descripcion corta y urgencia. No preguntes urgencia. No crea el reporte."""
+            """Abre YA el resumen del reporte. Infiere tipo, descripcion corta, urgencia y espacio. No preguntes urgencia. No crea el reporte. espacio_id es el code (esp-001) o el nombre del parque."""
             if user.role != UserRole.ciudadano:
                 return "Esta herramienta solo esta disponible para ciudadanos."
             tipo_final = normalize_report_tipo(tipo)
@@ -323,6 +333,16 @@ class AgentService:
                 urgencia_final = ReportUrgency((urgencia or "medio").strip().lower())
             except ValueError:
                 urgencia_final = ReportUrgency.medio
+
+            space = spaces.get_by_code_or_name(espacio_id) if (espacio_id or "").strip() else None
+            if space is None and lat is not None and lng is not None:
+                space = nearest_space(spaces.list_spaces(lat=lat, lng=lng), lat, lng)
+            if space is None:
+                return json.dumps(
+                    {
+                        "error": "Indica el parque o pide ubicacion GPS para asignar el espacio mas cercano.",
+                    }
+                )
 
             requested = [
                 part.strip()
@@ -347,11 +367,13 @@ class AgentService:
                 "lat": lat,
                 "lng": lng,
                 "direccion": (direccion or "").strip()[:240],
+                "espacio_id": str(space.id),
+                "espacio_nombre": space.nombre,
             }
             return json.dumps(
                 {
                     "accion": {"type": "report_draft", "draft": draft},
-                    "mensaje": "Abriendo el resumen del reporte para que confirmes.",
+                    "mensaje": f"Abriendo el resumen del reporte en {space.nombre} para que confirmes.",
                 }
             )
 
@@ -360,15 +382,18 @@ class AgentService:
             """Envia los ultimos N reportes activos a Telegram. Solo admin."""
             if user.role != UserRole.admin:
                 return "Esta herramienta solo esta disponible para administradores."
-            enviados, detalle = telegram.alert(None, max(1, min(cantidad, 5)))
+            enviados, detalle = telegram.alert(user, None, max(1, min(cantidad, 5)))
             return detalle if enviados else "No se enviaron reportes."
 
         @tool
         def estadisticas_reportes() -> str:
-            """Resume los reportes mas frecuentes del historial. Solo admin."""
+            """Resume los reportes mas frecuentes de TU espacio. Solo admin."""
             if user.role != UserRole.admin:
                 return "Esta herramienta solo esta disponible para administradores."
-            return json.dumps(reports.stats_by_tipo())
+            try:
+                return json.dumps(reports.stats_by_tipo(require_admin_space_id(user)))
+            except DomainError as exc:
+                return str(exc)
 
         tools = [obtener_parques_cercanos, consultar_horarios_disponibles, ir_a_reservar]
         if user.role == UserRole.ciudadano:
