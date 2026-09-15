@@ -133,6 +133,10 @@ p {
   background: rgba(255, 255, 255, 0.1);
 }
 
+.guest-nav-bar {
+  display: none;
+}
+
 .register-link {
   margin-left: 18px;
   padding: 18px 28px !important;
@@ -3638,48 +3642,52 @@ p {
   }
 
   .site-header-guest .navbar {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    align-items: center;
-    gap: 0;
-    padding: 8px 0 0;
+    width: 100%;
+    padding: 8px 12px;
   }
 
-  .site-header-guest .nav-links {
-    display: contents;
-  }
-
-  .site-header-guest .brand {
-    grid-column: 1 / 3;
-    grid-row: 1;
-    margin-left: 12px;
-    justify-self: start;
+  .site-header-guest .nav-links .nav-text-link {
+    display: none;
   }
 
   .site-header-guest .register-link {
-    grid-column: 3;
-    grid-row: 1;
-    margin: 0 12px 0 8px;
-    justify-self: end;
+    margin-left: 8px;
     padding: 10px 14px !important;
   }
 
-  .site-header-guest .nav-links a:not(.register-link) {
-    grid-row: 2;
+  .guest-nav-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    width: 100%;
+    background: var(--sidebar-blue);
+  }
+
+  .guest-nav-bar a {
     display: flex;
     align-items: center;
     justify-content: center;
     min-height: 44px;
     padding: 12px 8px;
+    border: 0;
     border-left: 1px solid rgba(255, 255, 255, 0.35);
-    background: var(--sidebar-blue);
+    background: transparent;
+    color: #ffffff;
+    font-family: var(--font-display);
     font-size: 11px;
+    font-weight: 700;
     line-height: 1.15;
     text-align: center;
+    text-transform: uppercase;
+    text-decoration: none;
   }
 
-  .site-header-guest .nav-links a:not(.register-link):first-of-type {
+  .guest-nav-bar a:first-child {
     border-left: 0;
+  }
+
+  .guest-nav-bar a:hover,
+  .guest-nav-bar a.active {
+    background: rgba(255, 255, 255, 0.1);
   }
 
   .brand {
@@ -3920,8 +3928,14 @@ p {
     text-align: center;
   }
 
+  .top-actions {
+    justify-content: flex-end;
+  }
+
   .top-actions .btn-action {
-    width: 100%;
+    width: auto;
+    min-height: 44px;
+    padding: 12px 18px;
   }
 
   .stat-box small {
@@ -3946,12 +3960,13 @@ p {
   }
 
   .chat-toolbar {
-    justify-content: stretch;
+    justify-content: flex-end;
   }
 
   .chat-toolbar button {
-    width: 100%;
+    width: auto;
     min-height: 44px;
+    padding: 10px 16px;
   }
 
   .chat-mensajes {
@@ -4034,12 +4049,13 @@ p {
   }
 
   .top-actions {
-    justify-content: stretch;
+    justify-content: flex-end;
   }
 
   .top-actions .btn-action {
-    width: 100%;
+    width: auto;
     min-height: 44px;
+    padding: 12px 18px;
     text-align: center;
   }
 
